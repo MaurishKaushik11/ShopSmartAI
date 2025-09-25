@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from django.db import models
+from django.utils import timezone
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import StandardScaler

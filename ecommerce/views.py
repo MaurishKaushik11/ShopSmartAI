@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_GET
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, Count
@@ -23,6 +23,7 @@ def get_or_create_cart(request):
     )
     return cart
 
+@ensure_csrf_cookie
 def home(request):
     """Homepage with featured products and recommendations"""
     # Get featured products
@@ -48,6 +49,7 @@ def home(request):
     }
     return render(request, 'ecommerce/home.html', context)
 
+@ensure_csrf_cookie
 def product_list(request, category_slug=None):
     """Display products with filtering and pagination"""
     products = Product.objects.filter(is_active=True)
@@ -92,6 +94,7 @@ def product_list(request, category_slug=None):
     }
     return render(request, 'ecommerce/product_list.html', context)
 
+@ensure_csrf_cookie
 def product_detail(request, slug):
     """Display product details with recommendations"""
     product = get_object_or_404(Product, slug=slug, is_active=True)
@@ -157,6 +160,7 @@ def add_to_cart(request, product_id):
         logger.error(f"Error adding to cart: {str(e)}")
         return JsonResponse({'success': False, 'error': 'Failed to add to cart'})
 
+@ensure_csrf_cookie
 def cart_detail(request):
     """Display cart contents"""
     cart = get_or_create_cart(request)
