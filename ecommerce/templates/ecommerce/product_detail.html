@@ -1,0 +1,195 @@
+{% extends 'ecommerce/base.html' %}
+
+{% block title %}{{ product.name }} - AI E-Commerce Platform{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- Product Image -->
+        <div class="col-md-6 mb-4">
+            <div class="position-relative">
+                {% if product.image_url %}
+                    <img src="{{ product.image_url }}" class="img-fluid rounded shadow" alt="{{ product.name }}" style="width: 100%; max-height: 500px; object-fit: cover;">
+                {% else %}
+                    <div class="bg-light d-flex align-items-center justify-content-center rounded shadow" style="height: 500px;">
+                        <i class="fas fa-image fa-5x text-muted"></i>
+                    </div>
+                {% endif %}
+                
+                <!-- Interaction Buttons - Larger for product detail -->
+                <div class="position-absolute top-0 end-0 p-3">
+                    <div class="d-flex flex-column gap-2">
+                        <button class="btn btn-success btn-sm" onclick="recordInteraction({{ product.id }}, 'like')" title="Like this product">
+                            <i class="fas fa-heart me-1"></i> Like
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="recordInteraction({{ product.id }}, 'dislike')" title="Not interested">
+                            <i class="fas fa-times me-1"></i> Not Interested
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Product Details -->
+        <div class="col-md-6">
+            <div class="product-details">
+                <!-- Breadcrumb -->
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'ecommerce:home' %}">Home</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'ecommerce:product_list_by_category' product.category.slug %}">{{ product.category.name }}</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">{{ product.name }}</li>
+                    </ol>
+                </nav>
+                
+                <h1 class="mb-3">{{ product.name }}</h1>
+                
+                <!-- Price and Stock Info -->
+                <div class="mb-4">
+                    <div class="row align-items-center">
+                        <div class="col-6">
+                            <h2 class="text-primary mb-0">${{ product.price }}</h2>
+                        </div>
+                        <div class="col-6 text-end">
+                            {% if product.stock > 10 %}
+                                <span class="badge bg-success fs-6">
+                                    <i class="fas fa-check-circle me-1"></i>In Stock
+                                </span>
+                            {% elif product.stock > 0 %}
+                                <span class="badge bg-warning fs-6">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>Only {{ product.stock }} left
+                                </span>
+                            {% else %}
+                                <span class="badge bg-danger fs-6">
+                                    <i class="fas fa-times-circle me-1"></i>Out of Stock
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Product Description -->
+                <div class="mb-4">
+                    <h4>Description</h4>
+                    <p class="lead">{{ product.description }}</p>
+                </div>
+                
+                <!-- Product Meta -->
+                <div class="mb-4">
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <strong>Category:</strong> 
+                            <a href="{% url 'ecommerce:product_list_by_category' product.category.slug %}" class="text-decoration-none">
+                                {{ product.category.name }}
+                            </a>
+                        </div>
+                        <div class="col-sm-6">
+                            <strong>Added:</strong> {{ product.created_at|date:"M d, Y" }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Add to Cart Form -->
+                <div class="mb-4">
+                    <form id="add-to-cart-form" class="d-flex align-items-center gap-3">
+                        <div class="input-group" style="width: 120px;">
+                            <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity(-1)">-</button>
+                            <input type="number" class="form-control text-center" id="quantity" value="1" min="1" max="{{ product.stock }}">
+                            <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity(1)">+</button>
+                        </div>
+                        
+                        {% if product.stock > 0 %}
+                            <button type="button" class="btn btn-primary btn-lg flex-grow-1" onclick="addToCartWithQuantity()">
+                                <i class="fas fa-cart-plus me-2"></i>Add to Cart
+                            </button>
+                        {% else %}
+                            <button type="button" class="btn btn-secondary btn-lg flex-grow-1" disabled>
+                                <i class="fas fa-times me-2"></i>Out of Stock
+                            </button>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Similar Products Section -->
+    {% if similar_products %}
+    <section class="mt-5">
+        <h3 class="mb-4">
+            <i class="fas fa-lightbulb text-warning me-2"></i>
+            You might also like
+        </h3>
+        <div class="row">
+            {% for rec in similar_products %}
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card product-card h-100">
+                    <div class="position-relative">
+                        {% if rec.product.image_url %}
+                            <img src="{{ rec.product.image_url }}" class="card-img-top" alt="{{ rec.product.name }}" style="height: 200px; object-fit: cover;">
+                        {% else %}
+                            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <i class="fas fa-image fa-3x text-muted"></i>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Interaction Buttons -->
+                        <div class="interaction-buttons">
+                            <button class="like-btn" onclick="recordInteraction({{ rec.product.id }}, 'like')" title="Like this product">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                            <button class="dislike-btn" onclick="recordInteraction({{ rec.product.id }}, 'dislike')" title="Not interested">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">{{ rec.product.name }}</h5>
+                        <p class="card-text flex-grow-1">{{ rec.product.description|truncatewords:15 }}</p>
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="h5 text-primary mb-0">${{ rec.product.price }}</span>
+                                <small class="text-muted">
+                                    <i class="fas fa-percentage me-1"></i>
+                                    {{ rec.score|floatformat:0 }}% match
+                                </small>
+                            </div>
+                            <div class="d-grid gap-2 d-md-flex">
+                                <a href="{% url 'ecommerce:product_detail' rec.product.slug %}" class="btn btn-outline-primary btn-sm">
+                                    View Details
+                                </a>
+                                <button class="btn btn-primary btn-sm" onclick="addToCart({{ rec.product.id }})">
+                                    <i class="fas fa-cart-plus me-1"></i> Add to Cart
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function changeQuantity(delta) {
+        const quantityInput = document.getElementById('quantity');
+        const currentValue = parseInt(quantityInput.value);
+        const newValue = currentValue + delta;
+        const maxValue = parseInt(quantityInput.max);
+        
+        if (newValue >= 1 && newValue <= maxValue) {
+            quantityInput.value = newValue;
+        }
+    }
+    
+    function addToCartWithQuantity() {
+        const quantity = document.getElementById('quantity').value;
+        addToCart({{ product.id }}, quantity);
+    }
+</script>
+{% endblock %}
